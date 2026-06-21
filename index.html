@@ -1,0 +1,2873 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapa odwiedzonych gmin dla dwóch osób — łódzkie i pomorskie</title>
+  <style>
+    :root {
+      --bg: #f7f4ef;
+      --card: rgba(255,255,255,.88);
+      --card-strong: rgba(255,255,255,.96);
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e7ddd0;
+      --accent: #b91c1c;
+      --accent-2: #f59e0b;
+      --done: #15803d;
+      --done-soft: rgba(34,197,94,.16);
+      --person1: #16a34a;
+      --person1-soft: rgba(34,197,94,.16);
+      --person2: #2563eb;
+      --person2-soft: rgba(37,99,235,.16);
+      --both-soft: rgba(147,51,234,.16);
+      --map-fill: rgba(255,255,255,.76);
+      --map-person1: rgba(34,197,94,.72);
+      --map-person2: rgba(59,130,246,.72);
+      --map-both: rgba(168,85,247,.68);
+      --map-stroke: rgba(31,41,55,.62);
+      --map-dim: rgba(255,255,255,.20);
+      --shadow: 0 18px 45px rgba(80, 55, 20, .12);
+      --radius: 18px;
+    }
+    [data-theme="dark"] {
+      --bg: #111827;
+      --card: rgba(31,41,55,.9);
+      --card-strong: rgba(17,24,39,.96);
+      --text: #f9fafb;
+      --muted: #cbd5e1;
+      --line: #374151;
+      --accent: #fb7185;
+      --accent-2: #fbbf24;
+      --done: #34d399;
+      --done-soft: rgba(52,211,153,.13);
+      --person1: #34d399;
+      --person1-soft: rgba(52,211,153,.15);
+      --person2: #60a5fa;
+      --person2-soft: rgba(96,165,250,.15);
+      --both-soft: rgba(192,132,252,.16);
+      --map-fill: rgba(55,65,81,.88);
+      --map-person1: rgba(52,211,153,.70);
+      --map-person2: rgba(96,165,250,.70);
+      --map-both: rgba(192,132,252,.70);
+      --map-stroke: rgba(249,250,251,.72);
+      --map-dim: rgba(55,65,81,.28);
+      --shadow: 0 18px 45px rgba(0, 0, 0, .25);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(245, 158, 11, .18), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(185, 28, 28, .16), transparent 28%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header { max-width: 1280px; margin: 0 auto; padding: 34px 18px 18px; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, .8fr); gap: 18px; align-items: stretch; }
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 50px); line-height: 1.02; }
+    h2 { margin: 0 0 8px; font-size: 22px; }
+    .lead { margin: 0; color: var(--muted); font-size: 17px; max-width: 860px; line-height: 1.5; }
+    .panel, .toolbar, .powiat-card, .stats-card, .map-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .panel { padding: 22px; }
+    .progress-number { font-size: 46px; font-weight: 850; letter-spacing: -1px; }
+    .progress-label { color: var(--muted); margin-top: 4px; }
+    .bar { height: 14px; background: rgba(127,127,127,.16); border-radius: 999px; overflow: hidden; margin: 18px 0 0; }
+    .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px; transition: width .25s ease; }
+    main { max-width: 1280px; margin: 0 auto; padding: 0 18px 36px; }
+    .toolbar { position: sticky; top: 0; z-index: 20; padding: 14px; display: grid; grid-template-columns: 1.05fr .9fr 1.85fr 1fr 1fr auto; gap: 10px; margin: 18px 0; }
+    input, select, button, label.file-btn {
+      font: inherit;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 12px;
+      background: rgba(255,255,255,.66);
+      color: var(--text);
+    }
+    [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] button, [data-theme="dark"] label.file-btn { background: rgba(17,24,39,.72); }
+    button, label.file-btn { cursor: pointer; font-weight: 650; }
+    button:hover, label.file-btn:hover { border-color: var(--accent); }
+    button.primary { background: var(--accent); color: white; border-color: transparent; }
+    button.ghost { background: transparent; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px; }
+    .stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 0 0 18px; }
+    .stats-card { padding: 14px; }
+    .stats-card strong { display: block; font-size: 24px; }
+    .stats-card span { color: var(--muted); font-size: 13px; }
+    .workspace { display: grid; grid-template-columns: minmax(420px, .95fr) minmax(0, 1.05fr); gap: 18px; align-items: start; }
+    .map-card { overflow: hidden; position: sticky; top: 92px; }
+    .map-head { padding: 16px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); background: var(--card-strong); }
+    .map-title-row { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+    .map-help { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .map-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .map-controls button, .map-controls label { padding: 9px 10px; font-size: 13px; }
+    #mapWrap { position: relative; height: min(72vh, 760px); min-height: 460px; background: linear-gradient(180deg, rgba(245,158,11,.10), rgba(185,28,28,.06)); overflow: hidden; }
+    #mapSvg { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+    #mapSvg.dragging { cursor: grabbing; }
+    .map-region {
+      fill: var(--map-fill);
+      stroke: var(--map-stroke);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+      cursor: pointer;
+      transition: fill .18s ease, opacity .18s ease, stroke .18s ease;
+    }
+    .map-region:hover, .map-region.hovered { stroke: var(--accent); stroke-width: 2; }
+    .map-region.person1 { fill: var(--map-person1); }
+    .map-region.person2 { fill: var(--map-person2); }
+    .map-region.both { fill: url(#bothPattern); }
+    .map-region.dimmed { opacity: .24; }
+    .map-region.unmatched { cursor: default; opacity: .32; fill: var(--map-dim); }
+    .map-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      z-index: 30;
+      max-width: 260px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card-strong);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .map-tooltip strong { display: block; font-size: 14px; }
+    .map-loading { position: absolute; inset: 16px; display: grid; place-items: center; text-align: center; color: var(--muted); pointer-events: none; }
+    .source-note { color: var(--muted); font-size: 12px; line-height: 1.45; margin: 0; }
+    .powiat-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .powiat-card { padding: 16px; }
+    .powiat-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .powiat-title { font-size: 19px; font-weight: 800; }
+    .powiat-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .mini-bar { width: 108px; height: 8px; border-radius: 99px; background: rgba(127,127,127,.16); overflow: hidden; margin-top: 6px; }
+    .mini-bar > div { height: 100%; background: linear-gradient(90deg, var(--person1), var(--person2)); width: 0%; }
+    .gminy { display: grid; gap: 8px; padding-top: 12px; }
+    .gmina { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.44); transition: transform .12s ease, border-color .12s ease, background .12s ease; }
+    .gmina:hover, .gmina.map-hover { transform: translateY(-1px); border-color: var(--accent); }
+    .gmina.person1 { border-color: rgba(22,163,74,.55); background: var(--person1-soft); }
+    .gmina.person2 { border-color: rgba(37,99,235,.55); background: var(--person2-soft); }
+    .gmina.both { border-color: rgba(147,51,234,.62); background: linear-gradient(90deg, var(--person1-soft), var(--person2-soft)); }
+    .person-toggles { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+    .person-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; white-space: nowrap; background: rgba(255,255,255,.46); }
+    .person-toggle input { width: 16px; height: 16px; margin: 0; }
+    .person-toggle.p1 input { accent-color: var(--person1); }
+    .person-toggle.p2 input { accent-color: var(--person2); }
+    .person-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .person-dot.p1 { background: var(--person1); }
+    .person-dot.p2 { background: var(--person2); }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 12px; align-items: center; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px; background: rgba(255,255,255,.36); }
+    .legend-swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,.12); display: inline-block; }
+    .legend-swatch.p1 { background: var(--person1); }
+    .legend-swatch.p2 { background: var(--person2); }
+    .legend-swatch.both { background: linear-gradient(135deg, var(--person1) 0 45%, var(--person2) 45% 100%); }
+    .name { font-weight: 720; }
+    .type { color: var(--muted); font-size: 12px; }
+    .badge { color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px; font-size: 12px; white-space: nowrap; }
+    .map-jump { font-size: 12px; padding: 6px 8px; }
+    .hidden { display: none !important; }
+    .empty { text-align: center; padding: 36px; color: var(--muted); }
+    .footer-note { color: var(--muted); font-size: 13px; margin-top: 18px; line-height: 1.45; }
+    dialog { border: none; border-radius: var(--radius); padding: 0; max-width: 720px; width: calc(100% - 24px); color: var(--text); background: var(--card); box-shadow: var(--shadow); }
+    dialog::backdrop { background: rgba(0,0,0,.42); }
+    .dialog-body { padding: 20px; }
+    textarea { width: 100%; min-height: 220px; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; border-radius: 12px; border: 1px solid var(--line); padding: 10px; background: rgba(255,255,255,.68); color: var(--text); }
+    @media (max-width: 1100px) { .workspace { grid-template-columns: 1fr; } .map-card { position: static; } }
+    @media (max-width: 960px) { .hero, .toolbar, .stats { grid-template-columns: 1fr; } .toolbar { position: static; } #mapWrap { height: 62vh; min-height: 360px; } .gmina { grid-template-columns: 1fr; } .person-toggles { justify-content: flex-start; } .map-jump { display: none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <section class="hero">
+      <div class="panel">
+        <h1 id="pageTitle">Odwiedzone gminy województwa łódzkiego</h1>
+        <p id="leadText" class="lead">Zaznaczaj gminy na liście albo bezpośrednio na mapie osobno dla dwóch osób. Osoba 1 ma kolor zielony, osoba 2 niebieski, a gminy wspólne pokazują oba kolory.</p>
+      </div>
+      <div class="panel" aria-live="polite">
+        <div class="progress-number"><span id="visitedCount">0</span>/<span id="totalCount">177</span></div>
+        <div class="progress-label"><span id="percentCount">0%</span> gmin zaznaczonych przez kogokolwiek</div>
+        <div class="bar"><div id="progressBar"></div></div>
+      </div>
+    </section>
+  </header>
+  <main>
+    <section class="toolbar" aria-label="Filtrowanie gmin">
+      <select id="wojFilter" aria-label="Wybór województwa">
+        <option value="lodzkie">Województwo łódzkie</option>
+        <option value="pomorskie">Województwo pomorskie</option>
+      </select>
+      <select id="activePerson" aria-label="Aktywna osoba do zaznaczania na mapie">
+        <option value="person1">Aktywna: Osoba 1</option>
+        <option value="person2">Aktywna: Osoba 2</option>
+      </select>
+      <input id="search" type="search" placeholder="Szukaj gminy lub powiatu…" autocomplete="off" />
+      <select id="typeFilter">
+        <option value="all">Wszystkie typy</option>
+        <option value="miasto na prawach powiatu">Miasta na prawach powiatu</option>
+        <option value="gmina miejska">Gminy miejskie</option>
+        <option value="gmina miejsko-wiejska">Gminy miejsko-wiejskie</option>
+        <option value="gmina wiejska">Gminy wiejskie</option>
+      </select>
+      <select id="statusFilter">
+        <option value="all">Wszystkie</option>
+        <option value="visited">Zaznaczone przez kogokolwiek</option>
+        <option value="unvisited">Bez zaznaczenia</option>
+        <option value="person1">Tylko Osoba 1</option>
+        <option value="person2">Tylko Osoba 2</option>
+        <option value="both">Zaznaczone przez obie osoby</option>
+      </select>
+      <button id="themeBtn" class="ghost" type="button">Tryb ciemny</button>
+    </section>
+
+    <div class="actions">
+      <button class="primary" id="markVisible" type="button">Zaznacz widoczne — Osoba 1</button>
+      <button id="unmarkVisible" type="button">Odznacz widoczne — Osoba 1</button>
+      <button id="exportJson" type="button">Eksport JSON</button>
+      <button id="exportCsv" type="button">Eksport CSV</button>
+      <button id="importBtn" type="button">Import JSON</button>
+      <button id="resetBtn" type="button">Reset</button>
+    </div>
+
+    <section class="stats" aria-label="Statystyki">
+      <div class="stats-card"><strong id="statPerson1">0</strong><span>gmin: Osoba 1</span></div>
+      <div class="stats-card"><strong id="statPerson2">0</strong><span>gmin: Osoba 2</span></div>
+      <div class="stats-card"><strong id="statBoth">0</strong><span>gmin wspólnych</span></div>
+      <div class="stats-card"><strong id="statUnvisited">177</strong><span>bez zaznaczenia</span></div>
+      <div class="stats-card"><strong id="statPowiaty">0</strong><span>powiatów zaczętych</span></div>
+      <div class="stats-card"><strong id="statToday">—</strong><span>ostatni zapis</span></div>
+    </section>
+
+    <section class="workspace">
+      <article class="map-card" aria-label="Mapa gmin wybranego województwa">
+        <div class="map-head">
+          <div class="map-title-row">
+            <div>
+              <h2>Mapa gmin</h2>
+              <p id="mapStatus" class="map-help">Ładowanie granic gmin…</p>
+            </div>
+            <span id="mapMatchBadge" class="badge">mapa</span>
+          </div>
+          <div class="map-controls">
+            <button id="zoomIn" type="button">+</button>
+            <button id="zoomOut" type="button">−</button>
+            <button id="resetView" type="button">Dopasuj</button>
+            <label class="file-btn" for="geoFile">Wczytaj GeoJSON</label>
+            <input id="geoFile" class="hidden" type="file" accept=".json,.geojson,application/json" />
+          </div>
+          <p class="source-note">Kliknij gminę na mapie, aby przełączyć zaznaczenie aktywnej osoby. Przeciągnij mapę, aby przesunąć widok; kółko myszy przybliża i oddala.</p>
+          <div class="legend" aria-label="Legenda kolorów">
+            <span class="legend-item"><span class="legend-swatch p1"></span>Osoba 1</span>
+            <span class="legend-item"><span class="legend-swatch p2"></span>Osoba 2</span>
+            <span class="legend-item"><span class="legend-swatch both"></span>Obie osoby</span>
+          </div>
+        </div>
+        <div id="mapWrap">
+          <svg id="mapSvg" role="img" aria-label="Interaktywna mapa gmin wybranego województwa" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
+          <div id="mapTooltip" class="map-tooltip"></div>
+          <div id="mapLoading" class="map-loading">Pobieram granice gmin z pliku GeoJSON…</div>
+        </div>
+      </article>
+
+      <section>
+        <section id="powiatGrid" class="powiat-grid"></section>
+        <div id="empty" class="empty hidden">Brak wyników dla wybranego filtra.</div>
+        <p id="footerNote" class="footer-note">Lista obejmuje gminy wybranego województwa. Granice mapy są dopasowywane po nazwie i typie gminy; zaznaczenia dwóch osób pozostają lokalnie w localStorage osobno dla każdego województwa.</p>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="importDialog">
+    <div class="dialog-body">
+      <h2>Import zaznaczeń JSON</h2>
+      <p class="footer-note">Wklej zawartość pliku JSON wyeksportowanego z tej aplikacji.</p>
+      <textarea id="importText" placeholder='{"people":{"person1":["..."],"person2":["..."]}}'></textarea>
+      <div class="actions">
+        <button class="primary" id="doImport" type="button">Importuj</button>
+        <button id="closeImport" type="button">Zamknij</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const REGIONS = {
+  "lodzkie": {
+    "label": "łódzkie",
+    "title": "Odwiedzone gminy województwa łódzkiego",
+    "tercPrefix": "10",
+    "filename": "lodzkie",
+    "legacyKey": "lodzkie-gminy-visited-v1",
+    "gminy": [
+      {
+        "id": "m.-lodz|lodz|miasto-na-prawach-powiatu",
+        "name": "Łódź",
+        "powiat": "m. Łódź",
+        "type": "miasto na prawach powiatu"
+      },
+      {
+        "id": "m.-piotrkow-trybunalski|piotrkow-trybunalski|miasto-na-prawach-powiatu",
+        "name": "Piotrków Trybunalski",
+        "powiat": "m. Piotrków Trybunalski",
+        "type": "miasto na prawach powiatu"
+      },
+      {
+        "id": "m.-skierniewice|skierniewice|miasto-na-prawach-powiatu",
+        "name": "Skierniewice",
+        "powiat": "m. Skierniewice",
+        "type": "miasto na prawach powiatu"
+      },
+      {
+        "id": "belchatowski|belchatow|gmina-miejska",
+        "name": "Bełchatów",
+        "powiat": "bełchatowski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "belchatowski|belchatow|gmina-wiejska",
+        "name": "Bełchatów",
+        "powiat": "bełchatowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "belchatowski|druzbice|gmina-wiejska",
+        "name": "Drużbice",
+        "powiat": "bełchatowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "belchatowski|kleszczow|gmina-wiejska",
+        "name": "Kleszczów",
+        "powiat": "bełchatowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "belchatowski|kluki|gmina-wiejska",
+        "name": "Kluki",
+        "powiat": "bełchatowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "belchatowski|rusiec|gmina-wiejska",
+        "name": "Rusiec",
+        "powiat": "bełchatowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "belchatowski|szczercow|gmina-wiejska",
+        "name": "Szczerców",
+        "powiat": "bełchatowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "belchatowski|zelow|gmina-miejsko-wiejska",
+        "name": "Zelów",
+        "powiat": "bełchatowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "brzezinski|brzeziny|gmina-miejska",
+        "name": "Brzeziny",
+        "powiat": "brzeziński",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "brzezinski|brzeziny|gmina-wiejska",
+        "name": "Brzeziny",
+        "powiat": "brzeziński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "brzezinski|dmosin|gmina-wiejska",
+        "name": "Dmosin",
+        "powiat": "brzeziński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "brzezinski|jezow|gmina-miejsko-wiejska",
+        "name": "Jeżów",
+        "powiat": "brzeziński",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "brzezinski|rogow|gmina-wiejska",
+        "name": "Rogów",
+        "powiat": "brzeziński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kutnowski|kutno|gmina-miejska",
+        "name": "Kutno",
+        "powiat": "kutnowski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "kutnowski|bedlno|gmina-wiejska",
+        "name": "Bedlno",
+        "powiat": "kutnowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kutnowski|dabrowice|gmina-miejsko-wiejska",
+        "name": "Dąbrowice",
+        "powiat": "kutnowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "kutnowski|krosniewice|gmina-miejsko-wiejska",
+        "name": "Krośniewice",
+        "powiat": "kutnowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "kutnowski|krzyzanow|gmina-wiejska",
+        "name": "Krzyżanów",
+        "powiat": "kutnowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kutnowski|kutno|gmina-wiejska",
+        "name": "Kutno",
+        "powiat": "kutnowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kutnowski|lanieta|gmina-wiejska",
+        "name": "Łanięta",
+        "powiat": "kutnowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kutnowski|nowe-ostrowy|gmina-wiejska",
+        "name": "Nowe Ostrowy",
+        "powiat": "kutnowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kutnowski|oporow|gmina-wiejska",
+        "name": "Oporów",
+        "powiat": "kutnowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kutnowski|strzelce|gmina-wiejska",
+        "name": "Strzelce",
+        "powiat": "kutnowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kutnowski|zychlin|gmina-miejsko-wiejska",
+        "name": "Żychlin",
+        "powiat": "kutnowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "laski|buczek|gmina-wiejska",
+        "name": "Buczek",
+        "powiat": "łaski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "laski|lask|gmina-miejsko-wiejska",
+        "name": "Łask",
+        "powiat": "łaski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "laski|sedziejowice|gmina-wiejska",
+        "name": "Sędziejowice",
+        "powiat": "łaski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "laski|widawa|gmina-wiejska",
+        "name": "Widawa",
+        "powiat": "łaski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "laski|wodzierady|gmina-wiejska",
+        "name": "Wodzierady",
+        "powiat": "łaski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "leczycki|leczyca|gmina-miejska",
+        "name": "Łęczyca",
+        "powiat": "łęczycki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "leczycki|daszyna|gmina-wiejska",
+        "name": "Daszyna",
+        "powiat": "łęczycki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "leczycki|gora-swietej-malgorzaty|gmina-wiejska",
+        "name": "Góra Świętej Małgorzaty",
+        "powiat": "łęczycki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "leczycki|grabow|gmina-miejsko-wiejska",
+        "name": "Grabów",
+        "powiat": "łęczycki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "leczycki|leczyca|gmina-wiejska",
+        "name": "Łęczyca",
+        "powiat": "łęczycki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "leczycki|piatek|gmina-miejsko-wiejska",
+        "name": "Piątek",
+        "powiat": "łęczycki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "leczycki|swinice-warckie|gmina-wiejska",
+        "name": "Świnice Warckie",
+        "powiat": "łęczycki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "leczycki|witonia|gmina-wiejska",
+        "name": "Witonia",
+        "powiat": "łęczycki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lowicki|lowicz|gmina-miejska",
+        "name": "Łowicz",
+        "powiat": "łowicki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "lowicki|bielawy|gmina-wiejska",
+        "name": "Bielawy",
+        "powiat": "łowicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lowicki|chasno|gmina-wiejska",
+        "name": "Chąśno",
+        "powiat": "łowicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lowicki|domaniewice|gmina-wiejska",
+        "name": "Domaniewice",
+        "powiat": "łowicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lowicki|kiernozia|gmina-miejsko-wiejska",
+        "name": "Kiernozia",
+        "powiat": "łowicki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "lowicki|kocierzew-poludniowy|gmina-wiejska",
+        "name": "Kocierzew Południowy",
+        "powiat": "łowicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lowicki|lowicz|gmina-wiejska",
+        "name": "Łowicz",
+        "powiat": "łowicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lowicki|lyszkowice|gmina-wiejska",
+        "name": "Łyszkowice",
+        "powiat": "łowicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lowicki|nieborow|gmina-wiejska",
+        "name": "Nieborów",
+        "powiat": "łowicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lowicki|zduny|gmina-wiejska",
+        "name": "Zduny",
+        "powiat": "łowicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lodzki-wschodni|andrespol|gmina-wiejska",
+        "name": "Andrespol",
+        "powiat": "łódzki wschodni",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lodzki-wschodni|brojce|gmina-wiejska",
+        "name": "Brójce",
+        "powiat": "łódzki wschodni",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lodzki-wschodni|koluszki|gmina-miejsko-wiejska",
+        "name": "Koluszki",
+        "powiat": "łódzki wschodni",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "lodzki-wschodni|nowosolna|gmina-wiejska",
+        "name": "Nowosolna",
+        "powiat": "łódzki wschodni",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "lodzki-wschodni|rzgow|gmina-miejsko-wiejska",
+        "name": "Rzgów",
+        "powiat": "łódzki wschodni",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "lodzki-wschodni|tuszyn|gmina-miejsko-wiejska",
+        "name": "Tuszyn",
+        "powiat": "łódzki wschodni",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "opoczynski|bialaczow|gmina-miejsko-wiejska",
+        "name": "Białaczów",
+        "powiat": "opoczyński",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "opoczynski|drzewica|gmina-miejsko-wiejska",
+        "name": "Drzewica",
+        "powiat": "opoczyński",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "opoczynski|mniszkow|gmina-wiejska",
+        "name": "Mniszków",
+        "powiat": "opoczyński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "opoczynski|opoczno|gmina-miejsko-wiejska",
+        "name": "Opoczno",
+        "powiat": "opoczyński",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "opoczynski|paradyz|gmina-wiejska",
+        "name": "Paradyż",
+        "powiat": "opoczyński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "opoczynski|poswietne|gmina-wiejska",
+        "name": "Poświętne",
+        "powiat": "opoczyński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "opoczynski|slawno|gmina-wiejska",
+        "name": "Sławno",
+        "powiat": "opoczyński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "opoczynski|zarnow|gmina-miejsko-wiejska",
+        "name": "Żarnów",
+        "powiat": "opoczyński",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "pabianicki|konstantynow-lodzki|gmina-miejska",
+        "name": "Konstantynów Łódzki",
+        "powiat": "pabianicki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "pabianicki|pabianice|gmina-miejska",
+        "name": "Pabianice",
+        "powiat": "pabianicki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "pabianicki|dlutow|gmina-wiejska",
+        "name": "Dłutów",
+        "powiat": "pabianicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pabianicki|dobron|gmina-wiejska",
+        "name": "Dobroń",
+        "powiat": "pabianicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pabianicki|ksawerow|gmina-wiejska",
+        "name": "Ksawerów",
+        "powiat": "pabianicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pabianicki|lutomiersk|gmina-miejsko-wiejska",
+        "name": "Lutomiersk",
+        "powiat": "pabianicki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "pabianicki|pabianice|gmina-wiejska",
+        "name": "Pabianice",
+        "powiat": "pabianicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pajeczanski|dzialoszyn|gmina-miejsko-wiejska",
+        "name": "Działoszyn",
+        "powiat": "pajęczański",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "pajeczanski|kielczyglow|gmina-wiejska",
+        "name": "Kiełczygłów",
+        "powiat": "pajęczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pajeczanski|nowa-brzeznica|gmina-wiejska",
+        "name": "Nowa Brzeźnica",
+        "powiat": "pajęczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pajeczanski|pajeczno|gmina-miejsko-wiejska",
+        "name": "Pajęczno",
+        "powiat": "pajęczański",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "pajeczanski|rzasnia|gmina-wiejska",
+        "name": "Rząśnia",
+        "powiat": "pajęczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pajeczanski|siemkowice|gmina-wiejska",
+        "name": "Siemkowice",
+        "powiat": "pajęczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pajeczanski|strzelce-wielkie|gmina-wiejska",
+        "name": "Strzelce Wielkie",
+        "powiat": "pajęczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pajeczanski|sulmierzyce|gmina-wiejska",
+        "name": "Sulmierzyce",
+        "powiat": "pajęczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "piotrkowski|aleksandrow|gmina-wiejska",
+        "name": "Aleksandrów",
+        "powiat": "piotrkowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "piotrkowski|czarnocin|gmina-wiejska",
+        "name": "Czarnocin",
+        "powiat": "piotrkowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "piotrkowski|gorzkowice|gmina-wiejska",
+        "name": "Gorzkowice",
+        "powiat": "piotrkowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "piotrkowski|grabica|gmina-wiejska",
+        "name": "Grabica",
+        "powiat": "piotrkowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "piotrkowski|leki-szlacheckie|gmina-wiejska",
+        "name": "Łęki Szlacheckie",
+        "powiat": "piotrkowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "piotrkowski|moszczenica|gmina-wiejska",
+        "name": "Moszczenica",
+        "powiat": "piotrkowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "piotrkowski|reczno|gmina-wiejska",
+        "name": "Ręczno",
+        "powiat": "piotrkowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "piotrkowski|rozprza|gmina-miejsko-wiejska",
+        "name": "Rozprza",
+        "powiat": "piotrkowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "piotrkowski|sulejow|gmina-miejsko-wiejska",
+        "name": "Sulejów",
+        "powiat": "piotrkowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "piotrkowski|wola-krzysztoporska|gmina-wiejska",
+        "name": "Wola Krzysztoporska",
+        "powiat": "piotrkowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "piotrkowski|wolborz|gmina-miejsko-wiejska",
+        "name": "Wolbórz",
+        "powiat": "piotrkowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "poddebicki|dalikow|gmina-wiejska",
+        "name": "Dalików",
+        "powiat": "poddębicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "poddebicki|poddebice|gmina-miejsko-wiejska",
+        "name": "Poddębice",
+        "powiat": "poddębicki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "poddebicki|peczniew|gmina-wiejska",
+        "name": "Pęczniew",
+        "powiat": "poddębicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "poddebicki|uniejow|gmina-miejsko-wiejska",
+        "name": "Uniejów",
+        "powiat": "poddębicki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "poddebicki|wartkowice|gmina-wiejska",
+        "name": "Wartkowice",
+        "powiat": "poddębicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "poddebicki|zadzim|gmina-wiejska",
+        "name": "Zadzim",
+        "powiat": "poddębicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|radomsko|gmina-miejska",
+        "name": "Radomsko",
+        "powiat": "radomszczański",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "radomszczanski|dobryszyce|gmina-wiejska",
+        "name": "Dobryszyce",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|gidle|gmina-wiejska",
+        "name": "Gidle",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|gomunice|gmina-wiejska",
+        "name": "Gomunice",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|kamiensk|gmina-miejsko-wiejska",
+        "name": "Kamieńsk",
+        "powiat": "radomszczański",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "radomszczanski|kobiele-wielkie|gmina-wiejska",
+        "name": "Kobiele Wielkie",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|kodrab|gmina-wiejska",
+        "name": "Kodrąb",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|lgota-wielka|gmina-wiejska",
+        "name": "Lgota Wielka",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|ladzice|gmina-wiejska",
+        "name": "Ładzice",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|maslowice|gmina-wiejska",
+        "name": "Masłowice",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|przedborz|gmina-miejsko-wiejska",
+        "name": "Przedbórz",
+        "powiat": "radomszczański",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "radomszczanski|radomsko|gmina-wiejska",
+        "name": "Radomsko",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|wielgomlyny|gmina-wiejska",
+        "name": "Wielgomłyny",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "radomszczanski|zytno|gmina-wiejska",
+        "name": "Żytno",
+        "powiat": "radomszczański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "rawski|rawa-mazowiecka|gmina-miejska",
+        "name": "Rawa Mazowiecka",
+        "powiat": "rawski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "rawski|biala-rawska|gmina-miejsko-wiejska",
+        "name": "Biała Rawska",
+        "powiat": "rawski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "rawski|cieladz|gmina-wiejska",
+        "name": "Cielądz",
+        "powiat": "rawski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "rawski|rawa-mazowiecka|gmina-wiejska",
+        "name": "Rawa Mazowiecka",
+        "powiat": "rawski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "rawski|regnow|gmina-wiejska",
+        "name": "Regnów",
+        "powiat": "rawski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "rawski|sadkowice|gmina-wiejska",
+        "name": "Sadkowice",
+        "powiat": "rawski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sieradzki|sieradz|gmina-miejska",
+        "name": "Sieradz",
+        "powiat": "sieradzki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "sieradzki|blaszki|gmina-miejsko-wiejska",
+        "name": "Błaszki",
+        "powiat": "sieradzki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "sieradzki|braszewice|gmina-wiejska",
+        "name": "Brąszewice",
+        "powiat": "sieradzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sieradzki|brzeznio|gmina-wiejska",
+        "name": "Brzeźnio",
+        "powiat": "sieradzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sieradzki|burzenin|gmina-wiejska",
+        "name": "Burzenin",
+        "powiat": "sieradzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sieradzki|goszczanow|gmina-wiejska",
+        "name": "Goszczanów",
+        "powiat": "sieradzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sieradzki|klonowa|gmina-wiejska",
+        "name": "Klonowa",
+        "powiat": "sieradzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sieradzki|sieradz|gmina-wiejska",
+        "name": "Sieradz",
+        "powiat": "sieradzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sieradzki|warta|gmina-miejsko-wiejska",
+        "name": "Warta",
+        "powiat": "sieradzki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "sieradzki|wroblew|gmina-wiejska",
+        "name": "Wróblew",
+        "powiat": "sieradzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sieradzki|zloczew|gmina-miejsko-wiejska",
+        "name": "Złoczew",
+        "powiat": "sieradzki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "skierniewicki|bolimow|gmina-miejsko-wiejska",
+        "name": "Bolimów",
+        "powiat": "skierniewicki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "skierniewicki|gluchow|gmina-wiejska",
+        "name": "Głuchów",
+        "powiat": "skierniewicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "skierniewicki|godzianow|gmina-wiejska",
+        "name": "Godzianów",
+        "powiat": "skierniewicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "skierniewicki|kowiesy|gmina-wiejska",
+        "name": "Kowiesy",
+        "powiat": "skierniewicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "skierniewicki|lipce-reymontowskie|gmina-wiejska",
+        "name": "Lipce Reymontowskie",
+        "powiat": "skierniewicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "skierniewicki|makow|gmina-wiejska",
+        "name": "Maków",
+        "powiat": "skierniewicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "skierniewicki|nowy-kaweczyn|gmina-wiejska",
+        "name": "Nowy Kawęczyn",
+        "powiat": "skierniewicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "skierniewicki|skierniewice|gmina-wiejska",
+        "name": "Skierniewice",
+        "powiat": "skierniewicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "skierniewicki|slupia|gmina-wiejska",
+        "name": "Słupia",
+        "powiat": "skierniewicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tomaszowski|tomaszow-mazowiecki|gmina-miejska",
+        "name": "Tomaszów Mazowiecki",
+        "powiat": "tomaszowski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "tomaszowski|bedkow|gmina-wiejska",
+        "name": "Będków",
+        "powiat": "tomaszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tomaszowski|budziszewice|gmina-wiejska",
+        "name": "Budziszewice",
+        "powiat": "tomaszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tomaszowski|czerniewice|gmina-wiejska",
+        "name": "Czerniewice",
+        "powiat": "tomaszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tomaszowski|inowlodz|gmina-miejsko-wiejska",
+        "name": "Inowłódz",
+        "powiat": "tomaszowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "tomaszowski|lubochnia|gmina-wiejska",
+        "name": "Lubochnia",
+        "powiat": "tomaszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tomaszowski|rokiciny|gmina-wiejska",
+        "name": "Rokiciny",
+        "powiat": "tomaszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tomaszowski|rzeczyca|gmina-wiejska",
+        "name": "Rzeczyca",
+        "powiat": "tomaszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tomaszowski|tomaszow-mazowiecki|gmina-wiejska",
+        "name": "Tomaszów Mazowiecki",
+        "powiat": "tomaszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tomaszowski|ujazd|gmina-miejsko-wiejska",
+        "name": "Ujazd",
+        "powiat": "tomaszowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "tomaszowski|zelechlinek|gmina-wiejska",
+        "name": "Żelechlinek",
+        "powiat": "tomaszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wielunski|biala|gmina-wiejska",
+        "name": "Biała",
+        "powiat": "wieluński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wielunski|czarnozyly|gmina-wiejska",
+        "name": "Czarnożyły",
+        "powiat": "wieluński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wielunski|konopnica|gmina-wiejska",
+        "name": "Konopnica",
+        "powiat": "wieluński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wielunski|mokrsko|gmina-wiejska",
+        "name": "Mokrsko",
+        "powiat": "wieluński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wielunski|osjakow|gmina-miejsko-wiejska",
+        "name": "Osjaków",
+        "powiat": "wieluński",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "wielunski|ostrowek|gmina-wiejska",
+        "name": "Ostrówek",
+        "powiat": "wieluński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wielunski|patnow|gmina-wiejska",
+        "name": "Pątnów",
+        "powiat": "wieluński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wielunski|skomlin|gmina-wiejska",
+        "name": "Skomlin",
+        "powiat": "wieluński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wielunski|wielun|gmina-miejsko-wiejska",
+        "name": "Wieluń",
+        "powiat": "wieluński",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "wielunski|wierzchlas|gmina-wiejska",
+        "name": "Wierzchlas",
+        "powiat": "wieluński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wieruszowski|boleslawiec|gmina-miejsko-wiejska",
+        "name": "Bolesławiec",
+        "powiat": "wieruszowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "wieruszowski|czastary|gmina-wiejska",
+        "name": "Czastary",
+        "powiat": "wieruszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wieruszowski|galewice|gmina-wiejska",
+        "name": "Galewice",
+        "powiat": "wieruszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wieruszowski|lututow|gmina-miejsko-wiejska",
+        "name": "Lututów",
+        "powiat": "wieruszowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "wieruszowski|lubnice|gmina-wiejska",
+        "name": "Łubnice",
+        "powiat": "wieruszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wieruszowski|sokolniki|gmina-wiejska",
+        "name": "Sokolniki",
+        "powiat": "wieruszowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wieruszowski|wieruszow|gmina-miejsko-wiejska",
+        "name": "Wieruszów",
+        "powiat": "wieruszowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "zdunskowolski|zdunska-wola|gmina-miejska",
+        "name": "Zduńska Wola",
+        "powiat": "zduńskowolski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "zdunskowolski|szadek|gmina-miejsko-wiejska",
+        "name": "Szadek",
+        "powiat": "zduńskowolski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "zdunskowolski|zapolice|gmina-wiejska",
+        "name": "Zapolice",
+        "powiat": "zduńskowolski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "zdunskowolski|zdunska-wola|gmina-wiejska",
+        "name": "Zduńska Wola",
+        "powiat": "zduńskowolski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "zgierski|glowno|gmina-miejska",
+        "name": "Głowno",
+        "powiat": "zgierski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "zgierski|ozorkow|gmina-miejska",
+        "name": "Ozorków",
+        "powiat": "zgierski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "zgierski|zgierz|gmina-miejska",
+        "name": "Zgierz",
+        "powiat": "zgierski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "zgierski|aleksandrow-lodzki|gmina-miejsko-wiejska",
+        "name": "Aleksandrów Łódzki",
+        "powiat": "zgierski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "zgierski|glowno|gmina-wiejska",
+        "name": "Głowno",
+        "powiat": "zgierski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "zgierski|ozorkow|gmina-wiejska",
+        "name": "Ozorków",
+        "powiat": "zgierski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "zgierski|parzeczew|gmina-miejsko-wiejska",
+        "name": "Parzęczew",
+        "powiat": "zgierski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "zgierski|strykow|gmina-miejsko-wiejska",
+        "name": "Stryków",
+        "powiat": "zgierski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "zgierski|zgierz|gmina-wiejska",
+        "name": "Zgierz",
+        "powiat": "zgierski",
+        "type": "gmina wiejska"
+      }
+    ]
+  },
+  "pomorskie": {
+    "label": "pomorskie",
+    "title": "Odwiedzone gminy województwa pomorskiego",
+    "tercPrefix": "22",
+    "filename": "pomorskie",
+    "legacyKey": "",
+    "gminy": [
+      {
+        "id": "m-gdansk|gdansk|miasto-na-prawach-powiatu",
+        "name": "Gdańsk",
+        "powiat": "m. Gdańsk",
+        "type": "miasto na prawach powiatu"
+      },
+      {
+        "id": "m-gdynia|gdynia|miasto-na-prawach-powiatu",
+        "name": "Gdynia",
+        "powiat": "m. Gdynia",
+        "type": "miasto na prawach powiatu"
+      },
+      {
+        "id": "m-slupsk|slupsk|miasto-na-prawach-powiatu",
+        "name": "Słupsk",
+        "powiat": "m. Słupsk",
+        "type": "miasto na prawach powiatu"
+      },
+      {
+        "id": "m-sopot|sopot|miasto-na-prawach-powiatu",
+        "name": "Sopot",
+        "powiat": "m. Sopot",
+        "type": "miasto na prawach powiatu"
+      },
+      {
+        "id": "bytowski|bytow|gmina-miejsko-wiejska",
+        "name": "Bytów",
+        "powiat": "bytowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "bytowski|miastko|gmina-miejsko-wiejska",
+        "name": "Miastko",
+        "powiat": "bytowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "bytowski|borzytuchom|gmina-wiejska",
+        "name": "Borzytuchom",
+        "powiat": "bytowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "bytowski|czarna-dabrowka|gmina-wiejska",
+        "name": "Czarna Dąbrówka",
+        "powiat": "bytowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "bytowski|kolczyglowy|gmina-wiejska",
+        "name": "Kołczygłowy",
+        "powiat": "bytowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "bytowski|lipnica|gmina-wiejska",
+        "name": "Lipnica",
+        "powiat": "bytowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "bytowski|parchowo|gmina-wiejska",
+        "name": "Parchowo",
+        "powiat": "bytowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "bytowski|studzienice|gmina-wiejska",
+        "name": "Studzienice",
+        "powiat": "bytowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "bytowski|trzebielino|gmina-wiejska",
+        "name": "Trzebielino",
+        "powiat": "bytowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "bytowski|tuchomie|gmina-wiejska",
+        "name": "Tuchomie",
+        "powiat": "bytowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "chojnicki|chojnice|gmina-miejska",
+        "name": "Chojnice",
+        "powiat": "chojnicki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "chojnicki|brusy|gmina-miejsko-wiejska",
+        "name": "Brusy",
+        "powiat": "chojnicki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "chojnicki|czersk|gmina-miejsko-wiejska",
+        "name": "Czersk",
+        "powiat": "chojnicki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "chojnicki|chojnice|gmina-wiejska",
+        "name": "Chojnice",
+        "powiat": "chojnicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "chojnicki|konarzyny|gmina-wiejska",
+        "name": "Konarzyny",
+        "powiat": "chojnicki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "czluchowski|czluchow|gmina-miejska",
+        "name": "Człuchów",
+        "powiat": "człuchowski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "czluchowski|czarne|gmina-miejsko-wiejska",
+        "name": "Czarne",
+        "powiat": "człuchowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "czluchowski|debrzno|gmina-miejsko-wiejska",
+        "name": "Debrzno",
+        "powiat": "człuchowski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "czluchowski|czluchow|gmina-wiejska",
+        "name": "Człuchów",
+        "powiat": "człuchowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "czluchowski|koczala|gmina-wiejska",
+        "name": "Koczała",
+        "powiat": "człuchowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "czluchowski|przechlewo|gmina-wiejska",
+        "name": "Przechlewo",
+        "powiat": "człuchowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "czluchowski|rzeczenica|gmina-wiejska",
+        "name": "Rzeczenica",
+        "powiat": "człuchowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "gdanski|pruszcz-gdanski|gmina-miejska",
+        "name": "Pruszcz Gdański",
+        "powiat": "gdański",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "gdanski|cedry-wielkie|gmina-wiejska",
+        "name": "Cedry Wielkie",
+        "powiat": "gdański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "gdanski|kolbudy|gmina-wiejska",
+        "name": "Kolbudy",
+        "powiat": "gdański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "gdanski|pruszcz-gdanski|gmina-wiejska",
+        "name": "Pruszcz Gdański",
+        "powiat": "gdański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "gdanski|przywidz|gmina-wiejska",
+        "name": "Przywidz",
+        "powiat": "gdański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "gdanski|pszczolki|gmina-wiejska",
+        "name": "Pszczółki",
+        "powiat": "gdański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "gdanski|suchy-dab|gmina-wiejska",
+        "name": "Suchy Dąb",
+        "powiat": "gdański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "gdanski|trabki-wielkie|gmina-wiejska",
+        "name": "Trąbki Wielkie",
+        "powiat": "gdański",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kartuski|kartuzy|gmina-miejsko-wiejska",
+        "name": "Kartuzy",
+        "powiat": "kartuski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "kartuski|zukowo|gmina-miejsko-wiejska",
+        "name": "Żukowo",
+        "powiat": "kartuski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "kartuski|chmielno|gmina-wiejska",
+        "name": "Chmielno",
+        "powiat": "kartuski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kartuski|przodkowo|gmina-wiejska",
+        "name": "Przodkowo",
+        "powiat": "kartuski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kartuski|sierakowice|gmina-wiejska",
+        "name": "Sierakowice",
+        "powiat": "kartuski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kartuski|somonino|gmina-wiejska",
+        "name": "Somonino",
+        "powiat": "kartuski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kartuski|stezyca|gmina-wiejska",
+        "name": "Stężyca",
+        "powiat": "kartuski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kartuski|suleczyno|gmina-wiejska",
+        "name": "Sulęczyno",
+        "powiat": "kartuski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "koscierski|koscierzyna|gmina-miejska",
+        "name": "Kościerzyna",
+        "powiat": "kościerski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "koscierski|dziemiany|gmina-wiejska",
+        "name": "Dziemiany",
+        "powiat": "kościerski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "koscierski|karsin|gmina-wiejska",
+        "name": "Karsin",
+        "powiat": "kościerski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "koscierski|koscierzyna|gmina-wiejska",
+        "name": "Kościerzyna",
+        "powiat": "kościerski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "koscierski|liniewo|gmina-wiejska",
+        "name": "Liniewo",
+        "powiat": "kościerski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "koscierski|lipusz|gmina-wiejska",
+        "name": "Lipusz",
+        "powiat": "kościerski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "koscierski|nowa-karczma|gmina-wiejska",
+        "name": "Nowa Karczma",
+        "powiat": "kościerski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "koscierski|stara-kiszewa|gmina-wiejska",
+        "name": "Stara Kiszewa",
+        "powiat": "kościerski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kwidzynski|kwidzyn|gmina-miejska",
+        "name": "Kwidzyn",
+        "powiat": "kwidzyński",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "kwidzynski|prabuty|gmina-miejsko-wiejska",
+        "name": "Prabuty",
+        "powiat": "kwidzyński",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "kwidzynski|gardeja|gmina-wiejska",
+        "name": "Gardeja",
+        "powiat": "kwidzyński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kwidzynski|kwidzyn|gmina-wiejska",
+        "name": "Kwidzyn",
+        "powiat": "kwidzyński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kwidzynski|ryjewo|gmina-wiejska",
+        "name": "Ryjewo",
+        "powiat": "kwidzyński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "kwidzynski|sadlinki|gmina-wiejska",
+        "name": "Sadlinki",
+        "powiat": "kwidzyński",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "leborski|lebork|gmina-miejska",
+        "name": "Lębork",
+        "powiat": "lęborski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "leborski|leba|gmina-miejska",
+        "name": "Łeba",
+        "powiat": "lęborski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "leborski|cewice|gmina-wiejska",
+        "name": "Cewice",
+        "powiat": "lęborski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "leborski|nowa-wies-leborska|gmina-wiejska",
+        "name": "Nowa Wieś Lęborska",
+        "powiat": "lęborski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "leborski|wicko|gmina-wiejska",
+        "name": "Wicko",
+        "powiat": "lęborski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "malborski|malbork|gmina-miejska",
+        "name": "Malbork",
+        "powiat": "malborski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "malborski|nowy-staw|gmina-miejsko-wiejska",
+        "name": "Nowy Staw",
+        "powiat": "malborski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "malborski|lichnowy|gmina-wiejska",
+        "name": "Lichnowy",
+        "powiat": "malborski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "malborski|malbork|gmina-wiejska",
+        "name": "Malbork",
+        "powiat": "malborski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "malborski|miloradz|gmina-wiejska",
+        "name": "Miłoradz",
+        "powiat": "malborski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "malborski|stare-pole|gmina-wiejska",
+        "name": "Stare Pole",
+        "powiat": "malborski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "nowodworski|krynica-morska|gmina-miejska",
+        "name": "Krynica Morska",
+        "powiat": "nowodworski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "nowodworski|nowy-dwor-gdanski|gmina-miejsko-wiejska",
+        "name": "Nowy Dwór Gdański",
+        "powiat": "nowodworski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "nowodworski|ostaszewo|gmina-wiejska",
+        "name": "Ostaszewo",
+        "powiat": "nowodworski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "nowodworski|stegna|gmina-wiejska",
+        "name": "Stegna",
+        "powiat": "nowodworski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "nowodworski|sztutowo|gmina-wiejska",
+        "name": "Sztutowo",
+        "powiat": "nowodworski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pucki|hel|gmina-miejska",
+        "name": "Hel",
+        "powiat": "pucki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "pucki|puck|gmina-miejska",
+        "name": "Puck",
+        "powiat": "pucki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "pucki|jastarnia|gmina-miejsko-wiejska",
+        "name": "Jastarnia",
+        "powiat": "pucki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "pucki|wladyslawowo|gmina-miejsko-wiejska",
+        "name": "Władysławowo",
+        "powiat": "pucki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "pucki|kosakowo|gmina-wiejska",
+        "name": "Kosakowo",
+        "powiat": "pucki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pucki|krokowa|gmina-wiejska",
+        "name": "Krokowa",
+        "powiat": "pucki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "pucki|puck|gmina-wiejska",
+        "name": "Puck",
+        "powiat": "pucki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "slupski|ustka|gmina-miejska",
+        "name": "Ustka",
+        "powiat": "słupski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "slupski|kepice|gmina-miejsko-wiejska",
+        "name": "Kępice",
+        "powiat": "słupski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "slupski|kobylnica|gmina-miejsko-wiejska",
+        "name": "Kobylnica",
+        "powiat": "słupski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "slupski|damnica|gmina-wiejska",
+        "name": "Damnica",
+        "powiat": "słupski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "slupski|debnica-kaszubska|gmina-wiejska",
+        "name": "Dębnica Kaszubska",
+        "powiat": "słupski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "slupski|glowczyce|gmina-wiejska",
+        "name": "Główczyce",
+        "powiat": "słupski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "slupski|potegowo|gmina-wiejska",
+        "name": "Potęgowo",
+        "powiat": "słupski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "slupski|redzikowo|gmina-wiejska",
+        "name": "Redzikowo",
+        "powiat": "słupski",
+        "type": "gmina wiejska",
+        "aliases": [
+          "Słupsk"
+        ]
+      },
+      {
+        "id": "slupski|smoldzino|gmina-wiejska",
+        "name": "Smołdzino",
+        "powiat": "słupski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "slupski|ustka|gmina-wiejska",
+        "name": "Ustka",
+        "powiat": "słupski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "starogardzki|skorcz|gmina-miejska",
+        "name": "Skórcz",
+        "powiat": "starogardzki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "starogardzki|starogard-gdanski|gmina-miejska",
+        "name": "Starogard Gdański",
+        "powiat": "starogardzki",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "starogardzki|czarna-woda|gmina-miejsko-wiejska",
+        "name": "Czarna Woda",
+        "powiat": "starogardzki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "starogardzki|skarszewy|gmina-miejsko-wiejska",
+        "name": "Skarszewy",
+        "powiat": "starogardzki",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "starogardzki|bobowo|gmina-wiejska",
+        "name": "Bobowo",
+        "powiat": "starogardzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "starogardzki|kaliska|gmina-wiejska",
+        "name": "Kaliska",
+        "powiat": "starogardzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "starogardzki|lubichowo|gmina-wiejska",
+        "name": "Lubichowo",
+        "powiat": "starogardzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "starogardzki|osieczna|gmina-wiejska",
+        "name": "Osieczna",
+        "powiat": "starogardzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "starogardzki|osiek|gmina-wiejska",
+        "name": "Osiek",
+        "powiat": "starogardzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "starogardzki|skorcz|gmina-wiejska",
+        "name": "Skórcz",
+        "powiat": "starogardzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "starogardzki|smetowo-graniczne|gmina-wiejska",
+        "name": "Smętowo Graniczne",
+        "powiat": "starogardzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "starogardzki|starogard-gdanski|gmina-wiejska",
+        "name": "Starogard Gdański",
+        "powiat": "starogardzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "starogardzki|zblewo|gmina-wiejska",
+        "name": "Zblewo",
+        "powiat": "starogardzki",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sztumski|dzierzgon|gmina-miejsko-wiejska",
+        "name": "Dzierzgoń",
+        "powiat": "sztumski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "sztumski|sztum|gmina-miejsko-wiejska",
+        "name": "Sztum",
+        "powiat": "sztumski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "sztumski|mikolajki-pomorskie|gmina-wiejska",
+        "name": "Mikołajki Pomorskie",
+        "powiat": "sztumski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sztumski|stary-dzierzgon|gmina-wiejska",
+        "name": "Stary Dzierzgoń",
+        "powiat": "sztumski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "sztumski|stary-targ|gmina-wiejska",
+        "name": "Stary Targ",
+        "powiat": "sztumski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tczewski|tczew|gmina-miejska",
+        "name": "Tczew",
+        "powiat": "tczewski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "tczewski|gniew|gmina-miejsko-wiejska",
+        "name": "Gniew",
+        "powiat": "tczewski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "tczewski|pelplin|gmina-miejsko-wiejska",
+        "name": "Pelplin",
+        "powiat": "tczewski",
+        "type": "gmina miejsko-wiejska"
+      },
+      {
+        "id": "tczewski|morzeszczyn|gmina-wiejska",
+        "name": "Morzeszczyn",
+        "powiat": "tczewski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tczewski|subkowy|gmina-wiejska",
+        "name": "Subkowy",
+        "powiat": "tczewski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "tczewski|tczew|gmina-wiejska",
+        "name": "Tczew",
+        "powiat": "tczewski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wejherowski|reda|gmina-miejska",
+        "name": "Reda",
+        "powiat": "wejherowski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "wejherowski|rumia|gmina-miejska",
+        "name": "Rumia",
+        "powiat": "wejherowski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "wejherowski|wejherowo|gmina-miejska",
+        "name": "Wejherowo",
+        "powiat": "wejherowski",
+        "type": "gmina miejska"
+      },
+      {
+        "id": "wejherowski|choczewo|gmina-wiejska",
+        "name": "Choczewo",
+        "powiat": "wejherowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wejherowski|gniewino|gmina-wiejska",
+        "name": "Gniewino",
+        "powiat": "wejherowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wejherowski|linia|gmina-wiejska",
+        "name": "Linia",
+        "powiat": "wejherowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wejherowski|luzino|gmina-wiejska",
+        "name": "Luzino",
+        "powiat": "wejherowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wejherowski|leczyce|gmina-wiejska",
+        "name": "Łęczyce",
+        "powiat": "wejherowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wejherowski|szemud|gmina-wiejska",
+        "name": "Szemud",
+        "powiat": "wejherowski",
+        "type": "gmina wiejska"
+      },
+      {
+        "id": "wejherowski|wejherowo|gmina-wiejska",
+        "name": "Wejherowo",
+        "powiat": "wejherowski",
+        "type": "gmina wiejska"
+      }
+    ]
+  }
+};
+    const CURRENT_REGION_KEY = 'odwiedzone-gminy-current-region-v1';
+    const SETTINGS_KEY = 'lodzkie-gminy-settings-v1';
+
+    let currentRegion = localStorage.getItem(CURRENT_REGION_KEY) || 'lodzkie';
+    if (!REGIONS[currentRegion]) currentRegion = 'lodzkie';
+    let GMINY = REGIONS[currentRegion].gminy;
+    let localByKey = new Map();
+    let gminaById = new Map();
+    const GEOJSON_URL = 'https://raw.githubusercontent.com/jusuff/PolandGeoJson/refs/heads/main/data/poland.municipalities.json';
+
+    const PEOPLE = {
+      person1: { label: 'Osoba 1', short: 'O1' },
+      person2: { label: 'Osoba 2', short: 'O2' }
+    };
+    const ACTIVE_PERSON_KEY = 'odwiedzone-gminy-active-person-v1';
+    let activePerson = localStorage.getItem(ACTIVE_PERSON_KEY) || 'person1';
+    if (!PEOPLE[activePerson]) activePerson = 'person1';
+    let visits = { person1: new Set(), person2: new Set() };
+    let lastSaved = null;
+    let mapReady = false;
+    let baseViewBox = null;
+    let currentViewBox = null;
+    let hoveredMapId = null;
+    let drag = null;
+    let suppressClickUntil = 0;
+    let loadedGeojson = null;
+
+    const els = {
+      grid: document.getElementById('powiatGrid'),
+      empty: document.getElementById('empty'),
+      wojFilter: document.getElementById('wojFilter'),
+      activePerson: document.getElementById('activePerson'),
+      pageTitle: document.getElementById('pageTitle'),
+      leadText: document.getElementById('leadText'),
+      footerNote: document.getElementById('footerNote'),
+      search: document.getElementById('search'),
+      typeFilter: document.getElementById('typeFilter'),
+      statusFilter: document.getElementById('statusFilter'),
+      visitedCount: document.getElementById('visitedCount'),
+      totalCount: document.getElementById('totalCount'),
+      percentCount: document.getElementById('percentCount'),
+      progressBar: document.getElementById('progressBar'),
+      statPerson1: document.getElementById('statPerson1'),
+      statPerson2: document.getElementById('statPerson2'),
+      statBoth: document.getElementById('statBoth'),
+      statPowiaty: document.getElementById('statPowiaty'),
+      statUnvisited: document.getElementById('statUnvisited'),
+      statToday: document.getElementById('statToday'),
+      themeBtn: document.getElementById('themeBtn'),
+      importDialog: document.getElementById('importDialog'),
+      importText: document.getElementById('importText'),
+      svg: document.getElementById('mapSvg'),
+      tooltip: document.getElementById('mapTooltip'),
+      mapStatus: document.getElementById('mapStatus'),
+      mapMatchBadge: document.getElementById('mapMatchBadge'),
+      mapLoading: document.getElementById('mapLoading'),
+      geoFile: document.getElementById('geoFile'),
+    };
+
+    function regionInfo() { return REGIONS[currentRegion]; }
+
+    function storageKey() { return `odwiedzone-gminy-${currentRegion}-visited-v3-two-people`; }
+    function oldStorageKey() { return `odwiedzone-gminy-${currentRegion}-visited-v2`; }
+
+    function emptyVisits() {
+      return { person1: new Set(), person2: new Set() };
+    }
+
+    function validIds(list) {
+      return Array.isArray(list) ? list.filter(id => gminaById.has(id)) : [];
+    }
+
+    function allVisitedIds() {
+      return new Set([...visits.person1, ...visits.person2]);
+    }
+
+    function isVisited(id) {
+      return visits.person1.has(id) || visits.person2.has(id);
+    }
+
+    function visitState(id) {
+      const p1 = visits.person1.has(id);
+      const p2 = visits.person2.has(id);
+      if (p1 && p2) return 'both';
+      if (p1) return 'person1';
+      if (p2) return 'person2';
+      return 'none';
+    }
+
+    function statusLabel(id) {
+      const state = visitState(id);
+      if (state === 'both') return 'obie osoby';
+      if (state === 'person1') return 'Osoba 1';
+      if (state === 'person2') return 'Osoba 2';
+      return 'brak';
+    }
+
+    function stateClass(id) {
+      const state = visitState(id);
+      return state === 'none' ? '' : ` visited ${state}`;
+    }
+
+    function toggleVisit(id, person = activePerson) {
+      if (!visits[person]) return;
+      if (visits[person].has(id)) visits[person].delete(id);
+      else visits[person].add(id);
+    }
+
+    function setVisit(id, person, checked) {
+      if (!visits[person]) return;
+      if (checked) visits[person].add(id);
+      else visits[person].delete(id);
+    }
+
+    function updateActivePersonLabels() {
+      els.activePerson.value = activePerson;
+      document.getElementById('markVisible').textContent = `Zaznacz widoczne — ${PEOPLE[activePerson].label}`;
+      document.getElementById('unmarkVisible').textContent = `Odznacz widoczne — ${PEOPLE[activePerson].label}`;
+    }
+
+    function buildIndexes() {
+      localByKey = new Map();
+      gminaById = new Map(GMINY.map(g => [g.id, g]));
+      for (const g of GMINY) {
+        const names = [g.name, ...(Array.isArray(g.aliases) ? g.aliases : [])];
+        for (const name of names) localByKey.set(featureKey(name, g.type), g);
+      }
+    }
+
+    function updateRegionLabels() {
+      const info = regionInfo();
+      els.wojFilter.value = currentRegion;
+      document.title = `Mapa odwiedzonych gmin — województwo ${info.label}`;
+      els.pageTitle.textContent = info.title;
+      els.leadText.textContent = `Zaznaczaj gminy województwa ${info.label} na liście albo bezpośrednio na mapie osobno dla dwóch osób. Osoba 1 ma kolor zielony, osoba 2 niebieski, a gminy wspólne pokazują oba kolory.`;
+      els.footerNote.textContent = `Lista obejmuje ${GMINY.length} gmin województwa ${info.label}. Granice mapy są dopasowywane po nazwie i typie gminy; zaznaczenia dwóch osób pozostają lokalnie w localStorage osobno dla każdego województwa.`;
+      els.svg.setAttribute('aria-label', `Interaktywna mapa gmin województwa ${info.label}`);
+      document.querySelector('.map-card')?.setAttribute('aria-label', `Mapa gmin województwa ${info.label}`);
+    }
+
+    function load() {
+      visits = emptyVisits();
+      lastSaved = null;
+      try {
+        const saved = localStorage.getItem(storageKey()) || localStorage.getItem(oldStorageKey()) || (regionInfo().legacyKey ? localStorage.getItem(regionInfo().legacyKey) : null) || '{}';
+        const raw = JSON.parse(saved);
+        if (raw.people && typeof raw.people === 'object') {
+          visits.person1 = new Set(validIds(raw.people.person1));
+          visits.person2 = new Set(validIds(raw.people.person2));
+        } else if (Array.isArray(raw.visited)) {
+          visits.person1 = new Set(validIds(raw.visited));
+        }
+        lastSaved = raw.lastSaved || null;
+      } catch {
+        visits = emptyVisits();
+      }
+      try {
+        const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+        if (settings.theme === 'dark') document.documentElement.dataset.theme = 'dark';
+      } catch {}
+    }
+
+    function save() {
+      lastSaved = new Date().toISOString();
+      localStorage.setItem(storageKey(), JSON.stringify({
+        people: {
+          person1: [...visits.person1],
+          person2: [...visits.person2]
+        },
+        visited: [...allVisitedIds()],
+        lastSaved
+      }));
+    }
+
+    function normalize(s) {
+      return String(s ?? '')
+        .toLowerCase()
+        .replace(/ł/g, 'l')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function cleanName(name) {
+      return String(name ?? '').replace(/^m\.\s+/i, '').replace(/^gmina\s+/i, '').trim();
+    }
+
+    function featureKey(name, type) {
+      return `${normalize(cleanName(name))}|${normalize(type)}`;
+    }
+
+    function filteredGminy() {
+      const q = normalize(els.search.value.trim());
+      const type = els.typeFilter.value;
+      const status = els.statusFilter.value;
+      return GMINY.filter(g => {
+        const text = normalize(`${g.name} ${g.powiat} ${g.type}`);
+        const matchesSearch = !q || text.includes(q);
+        const matchesType = type === 'all' || g.type === type;
+        const state = visitState(g.id);
+        const anyVisited = state !== 'none';
+        const matchesStatus =
+          status === 'all' ||
+          (status === 'visited' && anyVisited) ||
+          (status === 'unvisited' && !anyVisited) ||
+          (status === 'person1' && visits.person1.has(g.id)) ||
+          (status === 'person2' && visits.person2.has(g.id)) ||
+          (status === 'both' && state === 'both');
+        return matchesSearch && matchesType && matchesStatus;
+      });
+    }
+
+    function isFiltering() {
+      return Boolean(els.search.value.trim()) || els.typeFilter.value !== 'all' || els.statusFilter.value !== 'all';
+    }
+
+    function groupByPowiat(items) {
+      const map = new Map();
+      for (const item of items) {
+        if (!map.has(item.powiat)) map.set(item.powiat, []);
+        map.get(item.powiat).push(item);
+      }
+      return [...map.entries()];
+    }
+
+    function render() {
+      const items = filteredGminy();
+      els.grid.innerHTML = '';
+      els.empty.classList.toggle('hidden', items.length > 0);
+
+      const groups = groupByPowiat(items);
+      for (const [powiat, gminy] of groups) {
+        const allInPowiat = GMINY.filter(g => g.powiat === powiat);
+        const doneAll = allInPowiat.filter(g => isVisited(g.id)).length;
+        const percent = Math.round(doneAll / allInPowiat.length * 100);
+        const card = document.createElement('article');
+        card.className = 'powiat-card';
+        card.innerHTML = `
+          <div class="powiat-head">
+            <div>
+              <div class="powiat-title">${powiat}</div>
+              <div class="powiat-meta">${doneAll}/${allInPowiat.length} zaznaczonych</div>
+            </div>
+            <div>
+              <span class="badge">${percent}%</span>
+              <div class="mini-bar"><div style="width:${percent}%"></div></div>
+            </div>
+          </div>
+          <div class="gminy"></div>
+        `;
+        const list = card.querySelector('.gminy');
+        for (const g of gminy) {
+          const row = document.createElement('div');
+          row.className = 'gmina' + stateClass(g.id) + (hoveredMapId === g.id ? ' map-hover' : '');
+          row.dataset.id = g.id;
+          row.innerHTML = `
+            <div><div class="name">${g.name}</div><div class="type">${g.type}</div></div>
+            <div class="person-toggles" aria-label="Zaznaczenia osób">
+              <label class="person-toggle p1"><input type="checkbox" ${visits.person1.has(g.id) ? 'checked' : ''} data-id="${g.id}" data-person="person1" /><span class="person-dot p1"></span>O1</label>
+              <label class="person-toggle p2"><input type="checkbox" ${visits.person2.has(g.id) ? 'checked' : ''} data-id="${g.id}" data-person="person2" /><span class="person-dot p2"></span>O2</label>
+            </div>
+            <span class="badge">${statusLabel(g.id)}</span>
+            <button class="map-jump" type="button" data-focus-map="${g.id}">mapa</button>
+          `;
+          list.appendChild(row);
+        }
+        els.grid.appendChild(card);
+      }
+      updateStats();
+      updateMapStyles();
+    }
+
+    function updateStats() {
+      const total = GMINY.length;
+      const visitedIds = allVisitedIds();
+      const done = visitedIds.size;
+      const percent = total ? Math.round(done / total * 100) : 0;
+      const bothCount = GMINY.filter(g => visitState(g.id) === 'both').length;
+      els.totalCount.textContent = total;
+      els.visitedCount.textContent = done;
+      els.percentCount.textContent = percent + '%';
+      els.progressBar.style.width = percent + '%';
+      els.statPerson1.textContent = visits.person1.size;
+      els.statPerson2.textContent = visits.person2.size;
+      els.statBoth.textContent = bothCount;
+      els.statUnvisited.textContent = total - done;
+
+      const byPowiat = groupByPowiat(GMINY);
+      let touched = 0;
+      for (const [, items] of byPowiat) {
+        const count = items.filter(g => isVisited(g.id)).length;
+        if (count > 0) touched++;
+      }
+      els.statPowiaty.textContent = touched;
+      els.statToday.textContent = lastSaved ? new Date(lastSaved).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+      updateActivePersonLabels();
+    }
+
+    function download(filename, text, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportJson() {
+      const payload = {
+        app: 'odwiedzone-gminy-z-mapa',
+        region: currentRegion,
+        regionLabel: regionInfo().label,
+        exportedAt: new Date().toISOString(),
+        people: {
+          person1: [...visits.person1],
+          person2: [...visits.person2]
+        },
+        visited: [...allVisitedIds()],
+      };
+      download(`odwiedzone-gminy-${regionInfo().filename}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+    }
+
+    function csvCell(value) { return '"' + String(value).replace(/"/g, '""') + '"'; }
+
+    function exportCsv() {
+      const header = ['powiat','gmina','typ','osoba_1','osoba_2','status'].map(csvCell).join(',');
+      const rows = GMINY.map(g => [g.powiat, g.name, g.type, visits.person1.has(g.id) ? 'tak' : 'nie', visits.person2.has(g.id) ? 'tak' : 'nie', statusLabel(g.id)].map(csvCell).join(','));
+      download(`odwiedzone-gminy-${regionInfo().filename}.csv`, [header, ...rows].join('\n'), 'text/csv;charset=utf-8');
+    }
+
+    function getTerc(props) {
+      return String(props.terc ?? props.TERC ?? props.JPT_KOD_JE ?? props.jpt_kod_je ?? '').trim();
+    }
+
+    function getName(props) {
+      return cleanName(props.name ?? props.nazwa ?? props.NAZWA ?? props.JPT_NAZWA_ ?? props.JPT_NAZWA ?? '');
+    }
+
+    function typeFromTerc(terc) {
+      const t = String(terc).trim().slice(-1);
+      if (t === '1') return 'gmina miejska';
+      if (t === '2') return 'gmina wiejska';
+      if (t === '3') return 'gmina miejsko-wiejska';
+      if (t === '4') return 'gmina miejska';
+      if (t === '5') return 'gmina wiejska';
+      return '';
+    }
+
+    function matchFeatureToGmina(feature) {
+      const props = feature.properties || {};
+      const name = getName(props);
+      const terc = getTerc(props);
+      const inferredType = typeFromTerc(terc);
+      const candidateTypes = [
+        inferredType,
+        inferredType === 'gmina miejska' ? 'miasto na prawach powiatu' : '',
+        'gmina miejska',
+        'gmina wiejska',
+        'gmina miejsko-wiejska',
+        'miasto na prawach powiatu'
+      ].filter(Boolean);
+      for (const type of [...new Set(candidateTypes)]) {
+        const found = localByKey.get(featureKey(name, type));
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function isRegionFeature(feature) {
+      const terc = getTerc(feature.properties || {});
+      return terc.startsWith(regionInfo().tercPrefix);
+    }
+
+    function forEachCoord(geometry, fn) {
+      if (!geometry) return;
+      if (geometry.type === 'Polygon') {
+        geometry.coordinates.forEach(ring => ring.forEach(fn));
+      } else if (geometry.type === 'MultiPolygon') {
+        geometry.coordinates.forEach(poly => poly.forEach(ring => ring.forEach(fn)));
+      }
+    }
+
+    function project(coord) {
+      return [Number(coord[0]), -Number(coord[1])];
+    }
+
+    function geometryToPath(geometry) {
+      function ringToD(ring) {
+        return ring.map((coord, idx) => {
+          const [x, y] = project(coord);
+          return `${idx === 0 ? 'M' : 'L'}${x.toFixed(6)} ${y.toFixed(6)}`;
+        }).join(' ') + ' Z';
+      }
+      if (geometry.type === 'Polygon') return geometry.coordinates.map(ringToD).join(' ');
+      if (geometry.type === 'MultiPolygon') return geometry.coordinates.map(poly => poly.map(ringToD).join(' ')).join(' ');
+      return '';
+    }
+
+    function computeBounds(features) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      features.forEach(feature => forEachCoord(feature.geometry, coord => {
+        const [x, y] = project(coord);
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          minX = Math.min(minX, x); minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+        }
+      }));
+      const w = maxX - minX;
+      const h = maxY - minY;
+      const pad = Math.max(w, h) * 0.045;
+      return { x: minX - pad, y: minY - pad, w: w + pad * 2, h: h + pad * 2 };
+    }
+
+    function setViewBox(box) {
+      currentViewBox = { ...box };
+      els.svg.setAttribute('viewBox', `${box.x} ${box.y} ${box.w} ${box.h}`);
+    }
+
+    function zoomAt(factor, center) {
+      if (!currentViewBox) return;
+      const cx = center?.x ?? currentViewBox.x + currentViewBox.w / 2;
+      const cy = center?.y ?? currentViewBox.y + currentViewBox.h / 2;
+      const newW = currentViewBox.w * factor;
+      const newH = currentViewBox.h * factor;
+      const minW = (baseViewBox?.w || currentViewBox.w) * 0.08;
+      const maxW = (baseViewBox?.w || currentViewBox.w) * 4;
+      if (newW < minW || newW > maxW) return;
+      setViewBox({
+        x: cx - (cx - currentViewBox.x) * factor,
+        y: cy - (cy - currentViewBox.y) * factor,
+        w: newW,
+        h: newH
+      });
+    }
+
+    function svgPoint(evt) {
+      const pt = els.svg.createSVGPoint();
+      pt.x = evt.clientX;
+      pt.y = evt.clientY;
+      return pt.matrixTransform(els.svg.getScreenCTM().inverse());
+    }
+
+    function renderMap(geojson) {
+      loadedGeojson = geojson;
+      const all = Array.isArray(geojson.features) ? geojson.features : [];
+      const features = all.filter(isRegionFeature);
+      if (!features.length) throw new Error(`Plik GeoJSON nie zawiera gmin województwa ${regionInfo().label} z kodem TERC zaczynającym się od ${regionInfo().tercPrefix}.`);
+
+      els.svg.innerHTML = '';
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.innerHTML = `
+        <pattern id="bothPattern" patternUnits="userSpaceOnUse" width="0.16" height="0.16" patternTransform="rotate(45)">
+          <rect width="0.16" height="0.16" fill="#22c55e" opacity="0.76"></rect>
+          <rect width="0.08" height="0.16" fill="#2563eb" opacity="0.78"></rect>
+        </pattern>
+      `;
+      els.svg.appendChild(defs);
+      const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      group.setAttribute('id', 'mapLayer');
+      els.svg.appendChild(group);
+
+      let matched = 0;
+      const matchedIds = new Set();
+      for (const feature of features) {
+        const gmina = matchFeatureToGmina(feature);
+        const props = feature.properties || {};
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', geometryToPath(feature.geometry));
+        path.classList.add('map-region');
+        path.dataset.name = getName(props);
+        path.dataset.terc = getTerc(props);
+        if (gmina) {
+          matched++;
+          matchedIds.add(gmina.id);
+          path.dataset.id = gmina.id;
+          path.dataset.label = `${gmina.name} — ${gmina.type}, powiat ${gmina.powiat}`;
+          const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+          title.textContent = path.dataset.label;
+          path.appendChild(title);
+        } else {
+          path.classList.add('unmatched');
+          path.dataset.label = `${getName(props)} — brak dopasowania do listy`;
+        }
+        group.appendChild(path);
+      }
+
+      baseViewBox = computeBounds(features);
+      setViewBox(baseViewBox);
+      mapReady = true;
+      els.mapLoading.classList.add('hidden');
+      els.mapStatus.textContent = matched === GMINY.length
+        ? `Mapa gotowa: dopasowano wszystkie ${matched} gmin.`
+        : `Mapa gotowa: dopasowano ${matched}/${GMINY.length} gmin. Niedopasowane zostają wyszarzone.`;
+      els.mapMatchBadge.textContent = `${matched}/${GMINY.length}`;
+      updateMapStyles();
+    }
+
+    async function loadMapFromUrl() {
+      els.mapLoading.textContent = 'Pobieram granice gmin z pliku GeoJSON…';
+      try {
+        const res = await fetch(GEOJSON_URL, { cache: 'force-cache' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const geojson = await res.json();
+        renderMap(geojson);
+      } catch (err) {
+        mapReady = false;
+        els.mapLoading.textContent = 'Nie udało się automatycznie pobrać mapy. Możesz wczytać lokalny plik poland.municipalities.json przyciskiem „Wczytaj GeoJSON”.';
+        els.mapStatus.textContent = 'Mapa nie została załadowana — sprawdź internet albo wczytaj GeoJSON z pliku.';
+        console.error(err);
+      }
+    }
+
+    function updateMapStyles() {
+      if (!mapReady) return;
+      const visibleIds = new Set(filteredGminy().map(g => g.id));
+      const filterActive = isFiltering();
+      els.svg.querySelectorAll('.map-region[data-id]').forEach(path => {
+        const id = path.dataset.id;
+        const state = visitState(id);
+        path.classList.toggle('visited', state !== 'none');
+        path.classList.toggle('person1', state === 'person1');
+        path.classList.toggle('person2', state === 'person2');
+        path.classList.toggle('both', state === 'both');
+        path.classList.toggle('dimmed', filterActive && !visibleIds.has(id));
+        path.classList.toggle('hovered', hoveredMapId === id);
+      });
+    }
+
+    function showTooltip(evt, html) {
+      els.tooltip.innerHTML = html;
+      els.tooltip.style.display = 'block';
+      const wrapRect = document.getElementById('mapWrap').getBoundingClientRect();
+      els.tooltip.style.left = `${evt.clientX - wrapRect.left + 14}px`;
+      els.tooltip.style.top = `${evt.clientY - wrapRect.top + 14}px`;
+    }
+
+    function hideTooltip() {
+      els.tooltip.style.display = 'none';
+    }
+
+    function focusMapId(id, scrollMap = false) {
+      if (!mapReady) return;
+      hoveredMapId = id;
+      updateMapStyles();
+      const path = els.svg.querySelector(`.map-region[data-id="${CSS.escape(id)}"]`);
+      if (path) {
+        const bb = path.getBBox();
+        const pad = Math.max(bb.width, bb.height) * 1.2 || 0.02;
+        setViewBox({ x: bb.x - pad, y: bb.y - pad, w: bb.width + pad * 2, h: bb.height + pad * 2 });
+        if (scrollMap) document.querySelector('.map-card').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+    }
+
+    document.addEventListener('change', (e) => {
+      if (e.target.matches('input[type="checkbox"][data-id][data-person]')) {
+        const id = e.target.dataset.id;
+        const person = e.target.dataset.person;
+        setVisit(id, person, e.target.checked);
+        save();
+        render();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-focus-map]');
+      if (btn) {
+        e.preventDefault();
+        focusMapId(btn.dataset.focusMap, true);
+      }
+    });
+
+    els.grid.addEventListener('mouseover', (e) => {
+      const row = e.target.closest('.gmina[data-id]');
+      if (!row) return;
+      hoveredMapId = row.dataset.id;
+      updateMapStyles();
+    });
+    els.grid.addEventListener('mouseleave', () => {
+      hoveredMapId = null;
+      updateMapStyles();
+    });
+
+    function switchRegion(regionId) {
+      if (!REGIONS[regionId] || regionId === currentRegion) return;
+      currentRegion = regionId;
+      localStorage.setItem(CURRENT_REGION_KEY, currentRegion);
+      GMINY = REGIONS[currentRegion].gminy;
+      buildIndexes();
+      load();
+      updateRegionLabels();
+      render();
+      if (loadedGeojson) {
+        els.mapLoading.classList.remove('hidden');
+        els.mapLoading.textContent = 'Przełączam mapę województwa…';
+        renderMap(loadedGeojson);
+      } else {
+        loadMapFromUrl();
+      }
+    }
+
+    els.wojFilter.addEventListener('change', () => switchRegion(els.wojFilter.value));
+    els.activePerson.addEventListener('change', () => {
+      activePerson = els.activePerson.value;
+      localStorage.setItem(ACTIVE_PERSON_KEY, activePerson);
+      updateActivePersonLabels();
+    });
+    els.search.addEventListener('input', render);
+    els.typeFilter.addEventListener('change', render);
+    els.statusFilter.addEventListener('change', render);
+
+    document.getElementById('markVisible').addEventListener('click', () => {
+      for (const g of filteredGminy()) visits[activePerson].add(g.id);
+      save(); render();
+    });
+    document.getElementById('unmarkVisible').addEventListener('click', () => {
+      for (const g of filteredGminy()) visits[activePerson].delete(g.id);
+      save(); render();
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (confirm('Na pewno usunąć wszystkie zaznaczenia dla obu osób w wybranym województwie?')) { visits = emptyVisits(); save(); render(); }
+    });
+    document.getElementById('exportJson').addEventListener('click', exportJson);
+    document.getElementById('exportCsv').addEventListener('click', exportCsv);
+    document.getElementById('importBtn').addEventListener('click', () => els.importDialog.showModal());
+    document.getElementById('closeImport').addEventListener('click', () => els.importDialog.close());
+    document.getElementById('doImport').addEventListener('click', () => {
+      try {
+        const payload = JSON.parse(els.importText.value);
+        if (payload.region && REGIONS[payload.region] && payload.region !== currentRegion) switchRegion(payload.region);
+        visits = emptyVisits();
+        if (payload.people && typeof payload.people === 'object') {
+          visits.person1 = new Set(validIds(payload.people.person1));
+          visits.person2 = new Set(validIds(payload.people.person2));
+        } else {
+          visits.person1 = new Set(validIds(Array.isArray(payload.visited) ? payload.visited : []));
+        }
+        save();
+        render();
+        els.importDialog.close();
+        els.importText.value = '';
+      } catch (err) { alert('Nie udało się wczytać JSON. Sprawdź format pliku.'); }
+    });
+    els.themeBtn.addEventListener('click', () => {
+      const isDark = document.documentElement.dataset.theme === 'dark';
+      document.documentElement.dataset.theme = isDark ? '' : 'dark';
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ theme: isDark ? 'light' : 'dark' }));
+      els.themeBtn.textContent = isDark ? 'Tryb ciemny' : 'Tryb jasny';
+    });
+
+    els.geoFile.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        els.mapLoading.classList.remove('hidden');
+        els.mapLoading.textContent = 'Wczytuję lokalny plik GeoJSON…';
+        const text = await file.text();
+        renderMap(JSON.parse(text));
+      } catch (err) {
+        alert('Nie udało się wczytać GeoJSON. Upewnij się, że to plik poland.municipalities.json albo inny GeoJSON z kodami TERC.');
+        console.error(err);
+      } finally {
+        e.target.value = '';
+      }
+    });
+
+    els.svg.addEventListener('mouseover', (e) => {
+      const path = e.target.closest?.('.map-region[data-id]');
+      if (!path) return;
+      hoveredMapId = path.dataset.id;
+      const g = gminaById.get(hoveredMapId);
+      const state = statusLabel(hoveredMapId);
+      showTooltip(e, `<strong>${g.name}</strong>${g.type}<br>powiat ${g.powiat}<br>Status: ${state}<br>Aktywna: ${PEOPLE[activePerson].label}`);
+      updateMapStyles();
+      const row = els.grid.querySelector(`.gmina[data-id="${CSS.escape(hoveredMapId)}"]`);
+      if (row) row.classList.add('map-hover');
+    });
+    els.svg.addEventListener('mousemove', (e) => {
+      const path = e.target.closest?.('.map-region[data-id]');
+      if (!path || !hoveredMapId) return;
+      const g = gminaById.get(hoveredMapId);
+      const state = statusLabel(hoveredMapId);
+      showTooltip(e, `<strong>${g.name}</strong>${g.type}<br>powiat ${g.powiat}<br>Status: ${state}<br>Aktywna: ${PEOPLE[activePerson].label}`);
+    });
+    els.svg.addEventListener('mouseout', (e) => {
+      if (!e.relatedTarget || !els.svg.contains(e.relatedTarget)) {
+        hoveredMapId = null;
+        hideTooltip();
+        render();
+      }
+    });
+    els.svg.addEventListener('click', (e) => {
+      if (Date.now() < suppressClickUntil) return;
+      const path = e.target.closest?.('.map-region[data-id]');
+      if (!path) return;
+      const id = path.dataset.id;
+      toggleVisit(id, activePerson);
+      save();
+      render();
+    });
+
+    els.svg.addEventListener('wheel', (e) => {
+      if (!currentViewBox) return;
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 0.86 : 1.16;
+      zoomAt(factor, svgPoint(e));
+    }, { passive: false });
+
+    els.svg.addEventListener('pointerdown', (e) => {
+      if (!currentViewBox) return;
+      els.svg.setPointerCapture(e.pointerId);
+      const p = svgPoint(e);
+      drag = { pointerId: e.pointerId, start: p, startBox: { ...currentViewBox }, moved: false };
+      els.svg.classList.add('dragging');
+    });
+    els.svg.addEventListener('pointermove', (e) => {
+      if (!drag || drag.pointerId !== e.pointerId) return;
+      const p = svgPoint(e);
+      const dx = drag.start.x - p.x;
+      const dy = drag.start.y - p.y;
+      if (Math.abs(dx) + Math.abs(dy) > 0.003) drag.moved = true;
+      setViewBox({ ...drag.startBox, x: drag.startBox.x + dx, y: drag.startBox.y + dy });
+    });
+    els.svg.addEventListener('pointerup', (e) => {
+      if (drag?.moved) suppressClickUntil = Date.now() + 250;
+      drag = null;
+      els.svg.classList.remove('dragging');
+    });
+    els.svg.addEventListener('pointercancel', () => {
+      drag = null;
+      els.svg.classList.remove('dragging');
+    });
+
+    document.getElementById('zoomIn').addEventListener('click', () => zoomAt(0.78));
+    document.getElementById('zoomOut').addEventListener('click', () => zoomAt(1.28));
+    document.getElementById('resetView').addEventListener('click', () => { if (baseViewBox) setViewBox(baseViewBox); });
+
+    buildIndexes();
+    load();
+    updateRegionLabels();
+    updateActivePersonLabels();
+    els.themeBtn.textContent = document.documentElement.dataset.theme === 'dark' ? 'Tryb jasny' : 'Tryb ciemny';
+    render();
+    loadMapFromUrl();
+  </script>
+</body>
+</html>
