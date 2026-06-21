@@ -2869,5 +2869,141 @@
     render();
     loadMapFromUrl();
   </script>
+<script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "TU_WKLEJ_API_KEY",
+    authDomain: "TU_WKLEJ_AUTH_DOMAIN",
+    projectId: "TU_WKLEJ_PROJECT_ID",
+    storageBucket: "TU_WKLEJ_STORAGE_BUCKET",
+    messagingSenderId: "TU_WKLEJ_MESSAGING_SENDER_ID",
+    appId: "TU_WKLEJ_APP_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  const db = firebase.firestore();
+  const sharedDoc = db.collection("maps").doc("lodzkie-pomorskie-2-osoby");
+
+  const FIREBASE_STORAGE_KEYS = {
+    lodzkie: "odwiedzone-gminy-lodzkie-visited-v3-two-people",
+    pomorskie: "odwiedzone-gminy-pomorskie-visited-v3-two-people"
+  };
+
+  let firebaseReady = false;
+  let firebaseApplyingRemote = false;
+
+  function emptyPeopleProgress() {
+    return {
+      people: {
+        person1: [],
+        person2: []
+      },
+      visited: [],
+      lastSaved: null
+    };
+  }
+
+  function readLocalRegion(regionId) {
+    try {
+      const raw = localStorage.getItem(FIREBASE_STORAGE_KEYS[regionId]);
+      if (!raw) return emptyPeopleProgress();
+
+      const parsed = JSON.parse(raw);
+
+      const person1 = Array.isArray(parsed?.people?.person1)
+        ? parsed.people.person1
+        : [];
+
+      const person2 = Array.isArray(parsed?.people?.person2)
+        ? parsed.people.person2
+        : [];
+
+      return {
+        people: {
+          person1,
+          person2
+        },
+        visited: Array.from(new Set([...person1, ...person2])),
+        lastSaved: parsed.lastSaved || null
+      };
+    } catch {
+      return emptyPeopleProgress();
+    }
+  }
+
+  function writeLocalRegion(regionId, data) {
+    const person1 = Array.isArray(data?.people?.person1)
+      ? data.people.person1
+      : [];
+
+    const person2 = Array.isArray(data?.people?.person2)
+      ? data.people.person2
+      : [];
+
+    localStorage.setItem(
+      FIREBASE_STORAGE_KEYS[regionId],
+      JSON.stringify({
+        people: {
+          person1,
+          person2
+        },
+        visited: Array.from(new Set([...person1, ...person2])),
+        lastSaved: data?.lastSaved || new Date().toISOString()
+      })
+    );
+  }
+
+  async function pushProgressToFirebase() {
+    if (!firebaseReady || firebaseApplyingRemote) return;
+
+    await sharedDoc.set({
+      version: 3,
+      regions: {
+        lodzkie: readLocalRegion("lodzkie"),
+        pomorskie: readLocalRegion("pomorskie")
+      },
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  }
+
+  sharedDoc.onSnapshot((snapshot) => {
+    firebaseReady = true;
+
+    const data = snapshot.data();
+
+    if (!data || !data.regions) {
+      pushProgressToFirebase();
+      return;
+    }
+
+    firebaseApplyingRemote = true;
+
+    if (data.regions.lodzkie) {
+      writeLocalRegion("lodzkie", data.regions.lodzkie);
+    }
+
+    if (data.regions.pomorskie) {
+      writeLocalRegion("pomorskie", data.regions.pomorskie);
+    }
+
+    if (typeof load === "function") load();
+    if (typeof render === "function") render();
+    if (typeof updateMapStyles === "function") updateMapStyles();
+
+    setTimeout(() => {
+      firebaseApplyingRemote = false;
+    }, 300);
+  });
+
+  const originalSave = save;
+
+  save = function() {
+    originalSave();
+    pushProgressToFirebase();
+  };
+</script>
 </body>
 </html>
